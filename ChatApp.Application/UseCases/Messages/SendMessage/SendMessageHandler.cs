@@ -1,0 +1,53 @@
+using ChatApp.Application.DTOs;
+using ChatApp.Application.Interfaces.Repositories;
+using ChatApp.Application.Interfaces.Services;
+using ChatApp.Domain.Entities;
+using MediatR;
+
+namespace ChatApp.Application.UseCases.Messages.SendMessage;
+
+public class SendMessageHandler : IRequestHandler<SendMessageCommand, MessageDto>
+{
+    private readonly IMessageRepository _messageRepository;
+    private readonly ISentimentService _sentimentService;
+    private readonly ISignalRNotifier _signalRNotifier;
+
+    public SendMessageHandler(
+        IMessageRepository messageRepository, 
+        ISentimentService sentimentService, 
+        ISignalRNotifier signalRNotifier)
+    {
+        _messageRepository = messageRepository;
+        _sentimentService = sentimentService;
+        _signalRNotifier = signalRNotifier;
+    }
+
+    public async Task<MessageDto> Handle(SendMessageCommand request, CancellationToken cancellationToken)
+    {
+        var sentiment = await _sentimentService.AnalyzeTextAsync(request.Content, cancellationToken);
+
+        var message = new Message
+        {
+            Id = Guid.NewGuid(),
+            Content = request.Content,
+            ChatRoomId = request.ChatRoomId,
+            UserId = request.UserId,
+            Sentiment = sentiment,
+            Timestamp = DateTime.UtcNow
+        };
+
+        await _messageRepository.AddMessageAsync(message, cancellationToken);
+        await _messageRepository.SaveChangesAsync(cancellationToken);
+
+        var messageDto = new MessageDto(
+            message.Id, 
+            message.Content, 
+            request.Username, 
+            message.Timestamp, 
+            message.Sentiment.ToString());
+
+        await _signalRNotifier.BroadcastMessageAsync(request.RoomName, messageDto);
+
+        return messageDto;
+    }
+}
