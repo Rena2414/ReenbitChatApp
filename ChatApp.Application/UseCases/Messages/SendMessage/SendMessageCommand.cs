@@ -52,7 +52,9 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
             message.Content, 
             request.Username, 
             message.Timestamp, 
-            message.Sentiment.ToString());
+            message.Sentiment.ToString(),
+            message.UserId
+            );
 
         // 5. Broadcast via SignalR
         await _signalRNotifier.BroadcastMessageAsync(request.RoomName, messageDto);

@@ -44,7 +44,9 @@ public class SendMessageHandler : IRequestHandler<SendMessageCommand, MessageDto
             message.Content, 
             request.Username, 
             message.Timestamp, 
-            message.Sentiment.ToString());
+            message.Sentiment.ToString(),
+            message.UserId
+        );
 
         await _signalRNotifier.BroadcastMessageAsync(request.RoomName, messageDto);
 

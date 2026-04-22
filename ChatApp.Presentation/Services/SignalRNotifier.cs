@@ -1,6 +1,5 @@
 using ChatApp.Application.DTOs;
 using ChatApp.Application.Interfaces.Services;
-using ChatApp.Domain.Entities;
 using ChatApp.Presentation.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -20,10 +19,9 @@ public class SignalRNotifier : ISignalRNotifier
         await _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", message);
     }
 
-    // Add this new method
-    public async Task BroadcastRoomCreatedAsync(ChatRoom room)
+    public async Task BroadcastRoomCreatedAsync(ChatRoomDto room)
     {
-        // Broadcasts the new room to absolutely everyone connected
+        // Broadcasts the new room to absolutely everyone connected globally
         await _hubContext.Clients.All.SendAsync("RoomCreated", room);
     }
 }

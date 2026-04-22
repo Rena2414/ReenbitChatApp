@@ -1,59 +1,146 @@
-<div class="container-fluid h-100 mt-4">
-  <div class="row h-100">
-    <div class="col-md-3 border-end">
-      <h4>Chat Rooms</h4>
-      <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="New room name" [(ngModel)]="newRoomName">
-        <button class="btn btn-primary" (click)="createRoom()">Create</button>
-      </div>
+<div class="chat-layout">
 
-      <div class="loading-dots text-center my-3" *ngIf="isRoomsLoading">
-        <span>Loading rooms...</span>
-      </div>
+  <!-- ═══════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════════ -->
+  <aside class="sidebar">
 
-      <ul class="list-group" *ngIf="!isRoomsLoading">
-        <li class="list-group-item list-group-item-action cursor-pointer"
-            *ngFor="let room of rooms"
-            [class.active]="activeRoom?.id === room.id"
-            (click)="selectRoom(room)">
-          {{ room.name }}
-        </li>
-      </ul>
+    <div class="sidebar-header">
+      <h1 class="sidebar-title">
+        <!-- Chat icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        Lumina Chat
+      </h1>
+
+      <div class="create-room-row">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="New room name…"
+          [(ngModel)]="newRoomName"
+          (keyup.enter)="createRoom()" />
+        <button class="btn-add" (click)="createRoom()" title="Create room" aria-label="Create room">
+          <!-- Plus icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <div class="col-md-9 d-flex flex-column h-100" *ngIf="activeRoom; else noRoom">
-      <div class="flex-grow-1 overflow-auto p-3" style="max-height: 70vh;">
+    <div class="room-list custom-scroll">
 
-        <div class="loading-dots text-center my-3" *ngIf="isMessagesLoading">
-          <span>Loading messages...</span>
+      <div class="room-loading" *ngIf="isRoomsLoading">
+        <div class="spinner-border spinner-border-sm text-secondary"></div>
+        <span>Loading chats…</span>
+      </div>
+
+      <div
+        class="room-item"
+        *ngFor="let room of rooms"
+        [class.active]="activeRoom?.id === room.id"
+        (click)="selectRoom(room)">
+
+        <div class="room-avatar">{{ room.name.charAt(0) | uppercase }}</div>
+
+        <div class="room-meta">
+          <div class="room-name">{{ room.name }}</div>
+          <div class="room-sub">Tap to open</div>
         </div>
+      </div>
 
-        <div *ngIf="!isMessagesLoading">
-          <div *ngFor="let msg of messages" class="mb-3">
-            <strong>{{ msg.username }}</strong>
-            <span class="text-muted small ms-2">{{ msg.timestamp | date:'shortTime' }}</span>
-            <app-sentiment-badge class="ms-2" [sentiment]="msg.sentiment"></app-sentiment-badge>
-            <div class="p-2 mt-1 rounded border bg-light">
-              {{ msg.content }}
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════
+       MAIN CHAT
+  ════════════════════════════════════════ -->
+  <main class="main-chat">
+
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-left">
+        <ng-container *ngIf="activeRoom; else noRoomHeader">
+          <div class="header-avatar">{{ activeRoom.name.charAt(0) | uppercase }}</div>
+          <div class="header-info">
+            <div class="room-title">{{ activeRoom.name }}</div>
+            <div class="online-status">
+              <span class="online-dot"></span> Connected
             </div>
           </div>
-        </div>
-
+        </ng-container>
+        <ng-template #noRoomHeader>
+          <div class="header-placeholder">Select a chat</div>
+        </ng-template>
       </div>
 
-      <div class="mt-auto p-3 border-top">
-        <div class="input-group">
-          <input type="text" class="form-control" placeholder="Type a message..."
-                 [(ngModel)]="newMessage" (keyup.enter)="sendMessage()">
-          <button class="btn btn-primary" (click)="sendMessage()">Send</button>
+      <div class="header-right">
+        <div class="user-info d-none d-md-block">
+          <div class="user-name">{{ currentUser.username }}</div>
+          <div class="user-status">Online</div>
         </div>
+        <button class="btn-logout" (click)="logout()">Log out</button>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div
+      class="messages-area custom-scroll"
+      #scrollContainer
+      *ngIf="activeRoom; else emptyState">
+
+      <div class="history-loading" *ngIf="isMessagesLoading">
+        <span class="history-pill">Loading history…</span>
+      </div>
+
+      <div class="messages-inner">
+        <app-message-bubble
+          *ngFor="let msg of messages"
+          [message]="msg"
+          [isCurrentUser]="msg.userId === currentUser.id">
+        </app-message-bubble>
       </div>
     </div>
 
-    <ng-template #noRoom>
-      <div class="col-md-9 d-flex align-items-center justify-content-center text-muted h-100">
-        <h4>Select a chat room to start messaging</h4>
+    <!-- Empty / No room -->
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <div class="empty-card">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <h4>Welcome to Lumina Chat</h4>
+          <p>Pick a chat room from the sidebar,<br>or create a new one to get started.</p>
+        </div>
       </div>
     </ng-template>
-  </div>
+
+    <!-- Input bar -->
+    <div class="chat-input-bar" *ngIf="activeRoom">
+      <div class="input-row">
+        <input
+          type="text"
+          class="message-input"
+          placeholder="Write a message…"
+          [(ngModel)]="newMessage"
+          (keyup.enter)="sendMessage()" />
+        <button class="send-btn" (click)="sendMessage()" title="Send" aria-label="Send message">
+          <!-- Send icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </main>
 </div>

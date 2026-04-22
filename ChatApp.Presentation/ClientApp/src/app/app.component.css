@@ -1,16 +1,10 @@
 /* ============================================================
-   app.component.css — App Shell & Background
+   app.component.css — App Shell
    ============================================================ */
 
 :host {
   display: block;
-  min-height: 100vh;
-  /* Layered radial gradients create a soft aurora-like atmosphere */
-  background:
-    radial-gradient(ellipse 60% 50% at 15% 15%,  rgba(99,  102, 241, 0.09) 0%, transparent 70%),
-    radial-gradient(ellipse 55% 45% at 85% 80%,  rgba(139,  92, 246, 0.09) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 35% at 70% 10%,  rgba(125, 211, 252, 0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at 10% 90%,  rgba(167, 139, 250, 0.06) 0%, transparent 60%),
-    linear-gradient(155deg, #f0f3ff 0%, #f7f0ff 55%, #eef6ff 100%);
-  background-attachment: fixed;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--surface-app);
 }

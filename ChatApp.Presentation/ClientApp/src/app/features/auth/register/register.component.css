@@ -1,0 +1,268 @@
+/* ============================================================
+   register.component.css — Cyan auth page (register variant)
+   Shares all layout rules with login.component.css.
+   Only host-level background is needed here.
+   ============================================================ */
+
+:host {
+  display: flex;
+  height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  background-image: radial-gradient(circle, rgba(0,0,0,0.045) 1px, transparent 1px);
+  background-size: 20px 20px;
+  padding: 16px;
+}
+
+/* ─────────────────────────────────────────
+   Card
+───────────────────────────────────────── */
+.auth-card {
+  display: flex;
+  width: 100%;
+  max-width: 860px;
+  min-height: 480px;
+  background: #ffffff;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ─────────────────────────────────────────
+   Left visual panel
+───────────────────────────────────────── */
+.auth-visual {
+  width: 44%;
+  flex-shrink: 0;
+  background: var(--cyan-500);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-visual::before,
+.auth-visual::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+.auth-visual::before {
+  width: 300px;
+  height: 300px;
+  bottom: -80px;
+  left: -80px;
+}
+.auth-visual::after {
+  width: 180px;
+  height: 180px;
+  top: -50px;
+  right: -50px;
+}
+
+.visual-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #ffffff;
+}
+
+.visual-icon {
+  margin-bottom: 20px;
+  opacity: 0.95;
+}
+
+.visual-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.visual-sub {
+  font-size: 0.88rem;
+  opacity: 0.75;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────
+   Right form panel
+───────────────────────────────────────── */
+.auth-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 44px;
+}
+
+.form-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.form-subheading {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 28px;
+}
+
+/* Error alert */
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: var(--r-sm);
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+
+/* Field label */
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* Input */
+.auth-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--gray-50);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--r-md);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.auth-input::placeholder {
+  color: var(--text-muted);
+}
+
+.auth-input:focus {
+  background: #ffffff;
+  border-color: var(--cyan-400);
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.14);
+}
+
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-group:last-of-type {
+  margin-bottom: 24px;
+}
+
+/* Submit button */
+.btn-submit {
+  width: 100%;
+  padding: 11px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--cyan-500);
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 3px 12px rgba(0, 188, 212, 0.35);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--cyan-600);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(0, 188, 212, 0.4);
+}
+
+.btn-submit:active:not(:disabled) {
+  background: var(--cyan-700);
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
+}
+
+.btn-submit:disabled {
+  background: var(--cyan-200);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
+
+/* Auth link row */
+.auth-switch {
+  text-align: center;
+  font-size: 0.83rem;
+  color: var(--text-muted);
+}
+
+.auth-switch a {
+  color: var(--cyan-600);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.18s ease;
+}
+
+.auth-switch a:hover {
+  color: var(--cyan-700);
+  text-decoration: underline;
+}
+
+.mobile-logo {
+  display: none;
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--cyan-500);
+}
+
+/* ─────────────────────────────────────────
+   Responsive
+───────────────────────────────────────── */
+@media (max-width: 680px) {
+  .auth-visual {
+    display: none;
+  }
+
+  .auth-form {
+    padding: 36px 28px;
+  }
+
+  .mobile-logo {
+    display: block;
+  }
+
+  .auth-card {
+    min-height: unset;
+    border-radius: var(--r-lg);
+  }
+}

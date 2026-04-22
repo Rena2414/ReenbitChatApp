@@ -1,18 +1,23 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; // 1. Import ChangeDetectorRef
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from '../../core/services/chat/chat.service';
 import { ChatRoom, MessageDto } from '../../core/models/chat.models';
-import { SentimentBadgeComponent } from './sentiment-badge/sentiment-badge.component';
+import { MessageBubbleComponent } from './message-bubble/message-bubble.component';
+import { AuthService } from '../../core/services/auth/auth.service';
+import { AuthResponseDto } from '../../core/models/auth.models';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, SentimentBadgeComponent],
+  imports: [CommonModule, FormsModule, MessageBubbleComponent],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.css']
 })
-export class ChatComponent implements OnInit {
+export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+
   rooms: ChatRoom[] = [];
   activeRoom: ChatRoom | null = null;
   messages: MessageDto[] = [];
@@ -23,26 +28,58 @@ export class ChatComponent implements OnInit {
   newMessage = '';
   newRoomName = '';
 
-  currentUser = { id: '00000000-0000-0000-0000-000000000001', username: 'TestUser' };
+  currentUser!: AuthResponseDto;
+  private subs = new Subscription();
 
-  // 2. Inject ChangeDetectorRef (cdr)
-  constructor(private chatService: ChatService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private chatService: ChatService,
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
+    // Get the real logged-in user
+    const user = this.authService.currentUserValue;
+    if (user) {
+      this.currentUser = user;
+    }
+
+    // Start real-time connection (Internal token handling)
     this.chatService.startConnection();
     this.loadRooms();
 
-    this.chatService.messages$.subscribe(msgs => {
+    // Subscribe to messages
+    this.subs.add(this.chatService.messages$.subscribe(msgs => {
       this.messages = msgs;
-      this.cdr.detectChanges(); // 3. Force UI update on new messages
-    });
+      this.cdr.detectChanges(); // Force UI update
+      this.scrollToBottom();
+    }));
 
-    this.chatService.roomCreated$.subscribe(room => {
+    // Subscribe to new rooms in real-time
+    this.subs.add(this.chatService.roomCreated$.subscribe(room => {
+      // BUG FIX: Only add if it's not already in the list
       if (room && !this.rooms.find(r => r.id === room.id)) {
         this.rooms.push(room);
-        this.cdr.detectChanges(); // 3. Force UI update on new rooms
+        this.cdr.detectChanges(); // Force UI update
       }
-    });
+    }));
+  }
+
+  ngOnDestroy() {
+    // Cleanup to prevent memory leaks and duplicate listeners
+    this.subs.unsubscribe();
+  }
+
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  scrollToBottom(): void {
+    try {
+      if (this.scrollContainer) {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      }
+    } catch(err) { }
   }
 
   loadRooms() {
@@ -50,15 +87,18 @@ export class ChatComponent implements OnInit {
     this.chatService.getRooms().subscribe(rooms => {
       this.rooms = rooms;
       this.isRoomsLoading = false;
-      this.cdr.detectChanges(); // 3. Force UI update when HTTP finishes
+      this.cdr.detectChanges();
     });
   }
 
   createRoom() {
     if (!this.newRoomName) return;
+
+    // Call the API. We don't manually push here because the SignalR
+    // 'RoomCreated' listener above will handle it for all users instantly.
     this.chatService.createRoom(this.newRoomName).subscribe(() => {
       this.newRoomName = '';
-      this.cdr.detectChanges(); // 3. Force UI update
+      this.cdr.detectChanges();
     });
   }
 
@@ -73,7 +113,7 @@ export class ChatComponent implements OnInit {
     this.chatService.getMessagesHistory(room.id).subscribe(history => {
       this.chatService.setInitialMessages(history);
       this.isMessagesLoading = false;
-      this.cdr.detectChanges(); // 3. Force UI update when history loads
+      this.cdr.detectChanges();
     });
   }
 
@@ -86,9 +126,13 @@ export class ChatComponent implements OnInit {
       this.currentUser.id,
       this.currentUser.username,
       this.activeRoom.name
-    ).subscribe(() => {
-      this.newMessage = '';
-      this.cdr.detectChanges(); // 3. Force UI update
-    });
+    ).subscribe();
+
+    this.newMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  logout() {
+    this.authService.logout();
   }
 }

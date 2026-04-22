@@ -5,4 +5,5 @@ public record MessageDto(
     string Content, 
     string Username, 
     DateTime Timestamp, 
-    string Sentiment);
+    string Sentiment,
+    Guid UserId);

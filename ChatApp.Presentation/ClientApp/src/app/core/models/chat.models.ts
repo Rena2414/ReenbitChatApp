@@ -10,4 +10,5 @@ export interface MessageDto {
   username: string;
   timestamp: string;
   sentiment: string;
+  userId: string;
 }

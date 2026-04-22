@@ -1,34 +1,64 @@
+using System.Text;
 using Azure;
 using Azure.AI.TextAnalytics;
 using ChatApp.Application.Interfaces.Repositories;
 using ChatApp.Application.Interfaces.Services;
-using ChatApp.Application.UseCases.Messages.SendMessage; // Updated namespace
-using ChatApp.Application.Validators; // Updated namespace
 using ChatApp.Infrastructure.Data;
 using ChatApp.Infrastructure.Repositories;
 using ChatApp.Infrastructure.Services;
 using ChatApp.Presentation.Hubs;
 using ChatApp.Presentation.Services;
-using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configure Serilog
 builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration)
-        .WriteTo.Console()); // <-- This forces logs to the Rider terminal!
-// 2. Add API Controllers & Azure SignalR (Switched from Razor Pages to Web API)
-builder.Services.AddControllers();
-builder.Services.AddSignalR()
-    .AddAzureSignalR(builder.Configuration["Azure:SignalR:ConnectionString"]);
+    configuration.ReadFrom.Configuration(context.Configuration).WriteTo.Console());
 
-// 3. Configure Entity Framework Core with Azure SQL
+builder.Services.AddControllers();
+
+// Configure JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+        };
+
+        // Important: Required for authenticating SignalR WebSocket connections
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                // If the request is for our hub and has a token, attach it
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
+builder.Services.AddAuthorization();
+
+builder.Services.AddSignalR().AddAzureSignalR(builder.Configuration["Azure:SignalR:ConnectionString"]);
+
 builder.Services.AddDbContext<ChatAppContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 4. Configure Azure Cognitive Services Singleton
 builder.Services.AddSingleton(x =>
 {
     var endpoint = builder.Configuration["Azure:TextAnalytics:Endpoint"]!;
@@ -36,36 +66,20 @@ builder.Services.AddSingleton(x =>
     return new TextAnalyticsClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
 });
 
-// 5. Register Application Layer Dependencies (MediatR & FluentValidation)
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<SendMessageCommand>());
-builder.Services.AddValidatorsFromAssemblyContaining<SendMessageCommandValidator>();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ChatApp.Application.UseCases.Messages.SendMessage.SendMessageCommand).Assembly));
 
-// 6. Register Repositories and Services
+// Register new Repositories and Auth Services
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
-builder.Services.AddScoped<IChatRoomRepository, ChatRoomRepository>(); // Added new repository
+builder.Services.AddScoped<IChatRoomRepository, ChatRoomRepository>();
 builder.Services.AddSingleton<ISentimentService, SentimentService>();
 builder.Services.AddTransient<ISignalRNotifier, SignalRNotifier>();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ChatApp.Infrastructure.Data.ChatAppContext>();
-    var testUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-    
-    // Check if the user exists. If not, create them!
-    if (!dbContext.Users.Any(u => u.Id == testUserId))
-    {
-        dbContext.Users.Add(new ChatApp.Domain.Entities.User 
-        { 
-            Id = testUserId, 
-            Username = "TestUser" 
-        });
-        dbContext.SaveChanges();
-    }
-}
-
-// 7. Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -73,20 +87,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// Serve files from the wwwroot folder (where Angular automatically builds to)
-app.UseDefaultFiles();
 app.UseStaticFiles();
-
 app.UseRouting();
+
+// Add Auth middleware (Must be between Routing and Endpoints)
+app.UseAuthentication();
 app.UseAuthorization();
 
-// 8. Map Endpoints
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub");
-
-// 9. SPA Fallback Routing
-// If a route isn't recognized as an API or file, let Angular's router handle it
 app.MapFallbackToFile("index.html");
 
 app.Run();

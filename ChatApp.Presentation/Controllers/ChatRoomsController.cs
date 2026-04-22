@@ -1,41 +1,44 @@
-using ChatApp.Application.Interfaces.Repositories;
-using ChatApp.Application.Interfaces.Services;
-using ChatApp.Domain.Entities;
+using System.Security.Claims;
+using ChatApp.Application.UseCases.ChatRooms.AddUser;
+using ChatApp.Application.UseCases.ChatRooms.CreateRoom;
+using ChatApp.Application.UseCases.ChatRooms.GetRooms;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChatApp.Presentation.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ChatRoomsController : ControllerBase
 {
-    private readonly IChatRoomRepository _chatRoomRepository;
-    private readonly ISignalRNotifier _signalRNotifier; // Add notifier field
+    private readonly IMediator _mediator;
 
-    // Inject the notifier
-    public ChatRoomsController(IChatRoomRepository chatRoomRepository, ISignalRNotifier signalRNotifier)
-    {
-        _chatRoomRepository = chatRoomRepository;
-        _signalRNotifier = signalRNotifier;
-    }
+    public ChatRoomsController(IMediator mediator) => _mediator = mediator;
+
+    private Guid GetCurrentUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ChatRoom>>> GetRooms(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUserRooms(CancellationToken cancellationToken)
     {
-        var rooms = await _chatRoomRepository.GetAllAsync(cancellationToken);
-        return Ok(rooms);
+        var query = new GetUserRoomsQuery(GetCurrentUserId());
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpPost]
-    public async Task<ActionResult<ChatRoom>> CreateRoom([FromBody] string roomName, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateRoom([FromBody] string roomName, CancellationToken cancellationToken)
     {
-        var room = new ChatRoom { Id = Guid.NewGuid(), Name = roomName };
-        await _chatRoomRepository.AddAsync(room, cancellationToken);
-        await _chatRoomRepository.SaveChangesAsync(cancellationToken);
-        
-        // Broadcast the new room to all users
-        await _signalRNotifier.BroadcastRoomCreatedAsync(room);
-
+        var command = new CreateRoomCommand(roomName, GetCurrentUserId());
+        var room = await _mediator.Send(command, cancellationToken);
         return Ok(room);
+    }
+
+    [HttpPost("{roomId:guid}/users")]
+    public async Task<IActionResult> AddUserToRoom(Guid roomId, [FromBody] string usernameToAdd, CancellationToken cancellationToken)
+    {
+        var command = new AddUserToRoomCommand(roomId, usernameToAdd, GetCurrentUserId());
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

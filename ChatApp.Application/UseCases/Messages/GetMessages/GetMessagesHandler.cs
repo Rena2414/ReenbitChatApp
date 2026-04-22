@@ -23,7 +23,8 @@ public class GetMessagesHandler : IRequestHandler<GetMessagesQuery, IEnumerable<
             m.Content,
             m.User?.Username ?? "Unknown",
             m.Timestamp,
-            m.Sentiment.ToString()
+            m.Sentiment.ToString(),
+            m.UserId
         ));
     }
 }

@@ -5,13 +5,11 @@ namespace ChatApp.Infrastructure.Data;
 
 public class ChatAppContext : DbContext
 {
-    public ChatAppContext(DbContextOptions<ChatAppContext> options) : base(options)
-    {
-    }
+    public ChatAppContext(DbContextOptions<ChatAppContext> options) : base(options) { }
 
-    public DbSet<Message> Messages => Set<Message>();
-    public DbSet<ChatRoom> ChatRooms => Set<ChatRoom>();
-    public DbSet<User> Users => Set<User>();
+    public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<ChatRoom> ChatRooms { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +20,8 @@ public class ChatAppContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
+            // The new Password field:
+            entity.Property(e => e.PasswordHash).IsRequired(); 
         });
 
         // Configure ChatRoom
@@ -31,20 +31,20 @@ public class ChatAppContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
         });
 
-        // Configure Message and Relationships
+        // Configure Message and Relationships (Restored!)
         modelBuilder.Entity<Message>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Content).IsRequired().HasMaxLength(500);
-            entity.Property(e => e.Sentiment).HasConversion<string>(); // Store enum as string in SQL
+            
+            // This is the crucial line that prevents the crash!
+            entity.Property(e => e.Sentiment).HasConversion<string>(); 
 
-            // A Message belongs to one User
             entity.HasOne(m => m.User)
                 .WithMany(u => u.Messages)
                 .HasForeignKey(m => m.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // A Message belongs to one ChatRoom
             entity.HasOne(m => m.ChatRoom)
                 .WithMany(c => c.Messages)
                 .HasForeignKey(m => m.ChatRoomId)

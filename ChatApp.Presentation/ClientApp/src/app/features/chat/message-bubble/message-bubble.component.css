@@ -1,0 +1,181 @@
+/* ============================================================
+   message-bubble.component.css — Telegram-inspired bubbles
+   ============================================================ */
+
+/* Row wrapper */
+.message-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 100%;
+  padding: 2px 0;
+
+  /* Fade-in on appear */
+  animation: msg-appear 0.22s ease-out both;
+}
+
+@keyframes msg-appear {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Incoming (left) ─── */
+.message-row.incoming {
+  justify-content: flex-start;
+}
+
+/* ─── Outgoing (right) ─── */
+.message-row.outgoing {
+  justify-content: flex-end;
+}
+
+/* Mini avatar for incoming messages */
+.mini-avatar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--cyan-100);
+  color: var(--cyan-700);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  /* only shown for incoming */
+}
+
+/* Spacer to align outgoing bubble when no avatar */
+.avatar-spacer {
+  width: 30px;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────
+   Bubble
+───────────────────────────────────────── */
+.bubble {
+  max-width: 62%;
+  min-width: 80px;
+  padding: 8px 12px 6px;
+  border-radius: 18px;
+  position: relative;
+  word-break: break-word;
+  transition: box-shadow 0.18s ease;
+}
+
+/* Tail shapes via border-radius asymmetry */
+.message-row.incoming .bubble {
+  background: var(--surface-bubble-in);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.message-row.outgoing .bubble {
+  background: var(--surface-bubble-out);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Subtle hover lift */
+.bubble:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Sender name (incoming only) ─── */
+.sender-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--cyan-600);
+  margin-bottom: 3px;
+  line-height: 1.2;
+}
+
+/* ─── Message text ─── */
+.bubble-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ─── Footer: time + sentiment ─── */
+.bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.timestamp {
+  font-size: 0.68rem;
+  color: rgba(0, 0, 0, 0.38);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.message-row.outgoing .timestamp {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ─── Sentiment pill ─── */
+.sentiment-pill {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* Incoming bubble — normal palette */
+.message-row.incoming .sentiment-pill.positive {
+  background: #d1fae5;
+  color: #065f46;
+}
+.message-row.incoming .sentiment-pill.negative {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.message-row.incoming .sentiment-pill.neutral {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+/* Outgoing bubble — semi-transparent so it blends with cyan */
+.message-row.outgoing .sentiment-pill.positive {
+  background: rgba(255, 255, 255, 0.25);
+  color: #d1fae5;
+  outline: 1px solid rgba(255,255,255,0.3);
+}
+.message-row.outgoing .sentiment-pill.negative {
+  background: rgba(255, 255, 255, 0.20);
+  color: #fecaca;
+  outline: 1px solid rgba(255,255,255,0.3);
+}
+.message-row.outgoing .sentiment-pill.neutral {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.75);
+  outline: 1px solid rgba(255,255,255,0.25);
+}
+
+/* ─────────────────────────────────────────
+   Responsive — wider bubbles on small screens
+───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .bubble {
+    max-width: 80%;
+  }
+}
