@@ -17,22 +17,40 @@ export class LoginComponent {
   errorMessage = '';
   isLoading = false;
 
+  usernameError = '';
+  passwordError = '';
+
   constructor(private authService: AuthService, private router: Router) {
     if (this.authService.currentUserValue) {
       this.router.navigate(['/']);
     }
   }
 
-  onSubmit() {
-    if (!this.username || !this.password) return;
-    this.isLoading = true;
-    this.errorMessage = '';
+  private validate(): boolean {
+    this.usernameError = '';
+    this.passwordError = '';
 
-    this.authService.login({ username: this.username, password: this.password })
+    if (!this.username.trim()) {
+      this.usernameError = 'Username is required.';
+    }
+    if (!this.password) {
+      this.passwordError = 'Password is required.';
+    }
+
+    return !this.usernameError && !this.passwordError;
+  }
+
+  onSubmit() {
+    this.errorMessage = '';
+    if (!this.validate()) return;
+
+    this.isLoading = true;
+
+    this.authService.login({ username: this.username.trim(), password: this.password })
       .subscribe({
         next: () => this.router.navigate(['/']),
         error: (err) => {
-          this.errorMessage = err.error?.message || 'Invalid username or password.';
+          this.errorMessage = err.error?.detail || err.error?.message || 'Invalid username or password.';
           this.isLoading = false;
         }
       });

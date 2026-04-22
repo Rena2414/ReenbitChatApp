@@ -1,4 +1,5 @@
 using ChatApp.Application.DTOs;
+using ChatApp.Application.Exceptions;
 using ChatApp.Application.Interfaces.Repositories;
 using ChatApp.Application.Interfaces.Services;
 using ChatApp.Domain.Entities;
@@ -24,6 +25,12 @@ public class SendMessageHandler : IRequestHandler<SendMessageCommand, MessageDto
 
     public async Task<MessageDto> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Content))
+            throw new ValidationException("Message content cannot be empty.");
+
+        if (request.Content.Length > 500)
+            throw new ValidationException("Message cannot exceed 500 characters.");
+
         var sentiment = await _sentimentService.AnalyzeTextAsync(request.Content, cancellationToken);
 
         var message = new Message

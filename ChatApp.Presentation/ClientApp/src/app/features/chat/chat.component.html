@@ -1,8 +1,5 @@
 <div class="chat-layout">
 
-  <!-- ═══════════════════════════════════════
-       SIDEBAR
-  ════════════════════════════════════════ -->
   <aside class="sidebar">
 
     <div class="sidebar-header">
@@ -11,7 +8,7 @@
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-        Lumina Chat
+        Chat App
       </h1>
 
       <div class="create-room-row">
@@ -28,6 +25,7 @@
           </svg>
         </button>
       </div>
+      <div class="error-text" *ngIf="roomNameError">{{ roomNameError }}</div>
     </div>
 
     <div class="room-list custom-scroll">
@@ -46,17 +44,13 @@
 
         <div class="room-meta">
           <div class="room-name">{{ room.name }}</div>
-          <!-- FIX: was `participants | json` which printed raw JSON -->
-          <div class="room-sub">{{ room.participants?.length || 0 }} members</div>
+          <div class="room-sub">{{ room.participants.length || 0 }} members</div>
         </div>
       </div>
     </div>
 
   </aside>
 
-  <!-- ═══════════════════════════════════════
-       MAIN CHAT
-  ════════════════════════════════════════ -->
   <main class="main-chat">
 
     <header class="chat-header">
@@ -66,10 +60,9 @@
           <div class="header-info">
             <div class="room-title">{{ selectedRoom.name }}</div>
             <div class="online-status">
-              <!-- FIX: uses real connectionStatus reactive binding -->
               <span class="status-dot" [class.online]="connectionStatus === 'Connected'"></span>
               {{ connectionStatus }}
-              <span *ngIf="selectedRoom.participants?.length" class="participants-count">
+              <span *ngIf="selectedRoom.participants.length" class="participants-count">
                 · {{ selectedRoom.participants.length }} members
               </span>
             </div>
@@ -81,17 +74,14 @@
       </div>
 
       <div class="header-right">
-        <!-- FIX: guarded with *ngIf so null currentUser doesn't crash -->
         <div class="user-info d-none d-md-block" *ngIf="currentUser">
           <div class="user-name">{{ currentUser.username }}</div>
           <div class="user-status">Online</div>
         </div>
-        <!-- FIX: logout() was missing from the TS entirely -->
         <button class="btn-logout" (click)="logout()">Log out</button>
       </div>
     </header>
 
-    <!-- FIX: template ref changed from #scrollMe → #scrollContainer to match @ViewChild -->
     <div
       class="messages-area custom-scroll"
       #scrollContainer
@@ -105,7 +95,7 @@
         <app-message-bubble
           *ngFor="let msg of messages"
           [message]="msg"
-          [isCurrentUser]="msg.userId === currentUser?.id">
+          [isCurrentUser]="msg.userId === currentUser.id">
         </app-message-bubble>
       </div>
     </div>
@@ -119,7 +109,7 @@
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
           </div>
-          <h4>Welcome to Lumina Chat</h4>
+          <h4>Welcome to Chat App</h4>
           <p>Pick a room from the sidebar,<br>or create a new one to get started.</p>
         </div>
       </div>
@@ -141,14 +131,12 @@
           </svg>
         </button>
       </div>
+      <div class="error-text" *ngIf="messageError">{{ messageError }}</div>
+      <div class="error-text" *ngIf="sendMessageError">{{ sendMessageError }}</div>
     </div>
 
   </main>
 
-  <!-- ═══════════════════════════════════════
-       INVITE MODAL
-       Click backdrop → cancel; click inside → stopPropagation
-  ════════════════════════════════════════ -->
   <div class="modal-overlay" *ngIf="showInviteModal" (click)="cancelCreation()">
     <div class="invite-modal" (click)="$event.stopPropagation()">
 
@@ -196,6 +184,8 @@
           </div>
         </div>
       </div>
+
+      <div class="error-text" *ngIf="createRoomError">{{ createRoomError }}</div>
 
       <div class="modal-footer">
         <button class="btn-modal-cancel" (click)="cancelCreation()">Cancel</button>

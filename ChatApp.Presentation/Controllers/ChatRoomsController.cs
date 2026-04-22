@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using ChatApp.Application.UseCases.ChatRooms.AddUser;
 using ChatApp.Application.UseCases.ChatRooms.CreateRoom;
@@ -34,13 +35,15 @@ public class ChatRoomsController : ControllerBase
         return NoContent();
     }
     
-    // NOTE: Aligns with the runtime validation error expecting "roomName"
-    public record CreateRoomRequest(string RoomName, List<Guid> ParticipantIds);
+    public record CreateRoomRequest(
+        [Required, MinLength(1), MaxLength(100)] string RoomName,
+        List<Guid> ParticipantIds
+    );
 
     [HttpPost]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request, CancellationToken cancellationToken)
     {
-        var command = new CreateRoomCommand(request.RoomName, GetCurrentUserId(), request.ParticipantIds);
+        var command = new CreateRoomCommand(request.RoomName, GetCurrentUserId(), request.ParticipantIds ?? new List<Guid>());
         var room = await _mediator.Send(command, cancellationToken);
         return Ok(room);
     }

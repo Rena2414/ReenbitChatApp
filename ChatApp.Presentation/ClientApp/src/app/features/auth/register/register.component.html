@@ -1,6 +1,5 @@
 <div class="auth-card">
 
-  <!-- ── Left visual panel ── -->
   <div class="auth-visual">
     <div class="visual-content">
       <div class="visual-icon">
@@ -9,15 +8,12 @@
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
       </div>
-      <h2 class="visual-title">Lumina Chat</h2>
+      <h2 class="visual-title">Chat App</h2>
       <p class="visual-sub">Connect and collaborate<br>in real-time.</p>
     </div>
   </div>
 
-  <!-- ── Right form panel ── -->
   <div class="auth-form">
-
-    <!-- Mobile logo (hidden on desktop) -->
     <div class="mobile-logo">
       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -28,7 +24,6 @@
     <h3 class="form-heading">Create an account</h3>
     <p class="form-subheading">Sign up to get started.</p>
 
-    <!-- Error message -->
     <div class="error-alert" *ngIf="errorMessage">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -38,7 +33,6 @@
     </div>
 
     <form (ngSubmit)="onSubmit()">
-
       <div class="field-group">
         <label class="field-label" for="reg-username">Username</label>
         <input
@@ -50,6 +44,7 @@
           name="username"
           required
           autocomplete="username" />
+        <div class="error-text" *ngIf="usernameError">{{ usernameError }}</div>
       </div>
 
       <div class="field-group">
@@ -63,19 +58,18 @@
           name="password"
           required
           autocomplete="new-password" />
+        <div class="error-text" *ngIf="passwordError">{{ passwordError }}</div>
       </div>
 
-      <button type="submit" class="btn-submit" [disabled]="isLoading || !username || !password">
+      <button type="submit" class="btn-submit" [disabled]="isLoading">
         <span *ngIf="isLoading" class="spinner-border spinner-border-sm"></span>
         <span>{{ isLoading ? 'Creating account…' : 'Sign Up' }}</span>
       </button>
-
     </form>
 
     <div class="auth-switch">
       Already have an account?
       <a routerLink="/login">Sign in</a>
     </div>
-
   </div>
 </div>

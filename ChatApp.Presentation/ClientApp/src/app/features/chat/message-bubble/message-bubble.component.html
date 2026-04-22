@@ -1,20 +1,15 @@
 <div class="message-row" [class.incoming]="!isCurrentUser" [class.outgoing]="isCurrentUser">
 
-  <!-- Mini avatar for other users -->
   <div class="mini-avatar" *ngIf="!isCurrentUser" [title]="message.username">
     {{ message.username.charAt(0) | uppercase }}
   </div>
 
-  <!-- Bubble -->
   <div class="bubble">
 
-    <!-- Sender name (incoming only) -->
     <div class="sender-name" *ngIf="!isCurrentUser">{{ message.username }}</div>
 
-    <!-- Message text -->
     <p class="bubble-text">{{ message.content }}</p>
 
-    <!-- Footer: timestamp + sentiment (always shown) -->
     <div class="bubble-footer">
       <span class="timestamp">{{ message.timestamp | date:'HH:mm' }}</span>
       <span
@@ -28,7 +23,6 @@
 
   </div>
 
-  <!-- Right-side spacer to keep outgoing layout balanced -->
   <div class="avatar-spacer" *ngIf="isCurrentUser"></div>
 
 </div>

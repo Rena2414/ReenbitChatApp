@@ -15,29 +15,25 @@ public class ChatAppContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure User
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
-            // The new Password field:
+            entity.HasIndex(e => e.Username).IsUnique();
             entity.Property(e => e.PasswordHash).IsRequired(); 
         });
 
-        // Configure ChatRoom
         modelBuilder.Entity<ChatRoom>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
         });
 
-        // Configure Message and Relationships (Restored!)
         modelBuilder.Entity<Message>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Content).IsRequired().HasMaxLength(500);
             
-            // This is the crucial line that prevents the crash!
             entity.Property(e => e.Sentiment).HasConversion<string>(); 
 
             entity.HasOne(m => m.User)

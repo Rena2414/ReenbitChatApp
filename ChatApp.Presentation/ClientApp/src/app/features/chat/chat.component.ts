@@ -25,18 +25,20 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   newRoomName = '';
   connectionStatus = 'Disconnected';
 
-  // FIX 1: currentUser stored as property — template needs it for
-  // the header username and msg.userId === currentUser.id comparisons.
   currentUser!: AuthResponseDto;
 
-  // FIX 2: Loading flags — template spinners reference these but
-  // they were absent from the class.
   isRoomsLoading = false;
   isMessagesLoading = false;
 
   showInviteModal = false;
   allUsers: User[] = [];
   selectedUserIds: Set<string> = new Set();
+
+  // UI validation / error state
+  roomNameError = '';
+  messageError = '';
+  createRoomError = '';
+  sendMessageError = '';
 
   private subs = new Subscription();
 
@@ -47,7 +49,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // FIX 3: Resolve and store currentUser before any template renders.
     const user = this.authService.currentUserValue;
     if (user) {
       this.currentUser = user;
@@ -132,7 +133,19 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   initiateCreateRoom() {
-    if (!this.newRoomName.trim()) return;
+    this.roomNameError = '';
+    this.createRoomError = '';
+
+    const name = this.newRoomName.trim();
+    if (!name) {
+      this.roomNameError = 'Room name is required.';
+      return;
+    }
+    if (name.length > 100) {
+      this.roomNameError = 'Room name must be 100 characters or less.';
+      return;
+    }
+
     this.showInviteModal = true;
   }
 
@@ -145,15 +158,25 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   confirmCreateRoom() {
-    this.chatService.createRoom(this.newRoomName, Array.from(this.selectedUserIds))
+    this.createRoomError = '';
+    const name = this.newRoomName.trim();
+    if (!name) {
+      this.roomNameError = 'Room name is required.';
+      return;
+    }
+
+    this.chatService.createRoom(name, Array.from(this.selectedUserIds))
       .subscribe({
         next: () => {
           this.newRoomName = '';
           this.selectedUserIds.clear();
           this.showInviteModal = false;
           this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.createRoomError = err.error?.detail || err.error?.message || 'Failed to create room.';
+          this.cdr.detectChanges();
         }
-        // error: modal stays open so the user can retry
       });
   }
 
@@ -161,15 +184,25 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.showInviteModal = false;
     this.newRoomName = '';
     this.selectedUserIds.clear();
+    this.roomNameError = '';
+    this.createRoomError = '';
   }
 
   sendMessage() {
-    const user = this.authService.currentUserValue;
-    if (!this.newMessage.trim() || !this.selectedRoom || !user) return;
+    this.messageError = '';
+    this.sendMessageError = '';
 
-    // FIX 4: Capture text before clearing so the HTTP payload is correct.
-    const text = this.newMessage;
-    this.newMessage = ''; // Optimistic clear for instant UX feedback
+    const user = this.authService.currentUserValue;
+    const text = this.newMessage.trim();
+
+    if (!text || !this.selectedRoom || !user) return;
+
+    if (text.length > 500) {
+      this.messageError = 'Message cannot exceed 500 characters.';
+      return;
+    }
+
+    this.newMessage = '';
 
     this.chatService.sendMessage(
       text,
@@ -178,15 +211,14 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
       user.username,
       this.selectedRoom.name
     ).subscribe({
-      error: () => {
-        // Restore the message if the send actually fails.
+      error: (err) => {
         this.newMessage = text;
+        this.sendMessageError = err.error?.detail || err.error?.message || 'Message failed to send.';
         this.cdr.detectChanges();
       }
     });
   }
 
-  // FIX 5: logout() was completely missing.
   logout() {
     this.authService.logout();
   }

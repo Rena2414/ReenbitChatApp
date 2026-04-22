@@ -22,21 +22,25 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
 
     public async Task<AuthResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        var existingUser = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken);
+        var username = request.Username.Trim();
+
+        if (string.IsNullOrWhiteSpace(username))
+            throw new ValidationException("Username is required.");
+
+        var existingUser = await _userRepository.GetByUsernameAsync(username, cancellationToken);
         if (existingUser != null)
-        {
-            throw new Exception("Username already exists.");
-        }
+            throw new ValidationException("Username already exists.");
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = request.Username,
+            Username = username,
             PasswordHash = _passwordHasher.Hash(request.Password)
         };
 
         await _userRepository.AddAsync(user, cancellationToken);
-
+        await _userRepository.SaveChangesAsync(cancellationToken); 
+        
         var token = _jwtProvider.Generate(user);
         return new AuthResponseDto(user.Id, user.Username, token);
     }

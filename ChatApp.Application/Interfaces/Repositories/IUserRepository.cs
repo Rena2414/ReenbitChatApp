@@ -8,5 +8,5 @@ public interface IUserRepository
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task AddAsync(User user, CancellationToken cancellationToken);
     Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken);
-    Task SaveChangesAsync(CancellationToken cancellationToken); // Added this
+    Task SaveChangesAsync(CancellationToken cancellationToken);
 }

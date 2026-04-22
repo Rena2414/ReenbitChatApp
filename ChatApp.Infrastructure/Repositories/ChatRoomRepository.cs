@@ -16,8 +16,6 @@ public class ChatRoomRepository : IChatRoomRepository
 
     public async Task<ChatRoom?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        // IMPORTANT: .Include(c => c.Users) is vital for your Application handlers
-        // so that EF Core loads the participants when checking permissions!
         return await _context.ChatRooms
             .Include(c => c.Users)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -25,7 +23,6 @@ public class ChatRoomRepository : IChatRoomRepository
 
     public async Task<IEnumerable<ChatRoom>> GetRoomsForUserAsync(Guid userId, CancellationToken cancellationToken)
     {
-        // Fetches only the rooms where this specific user is a participant
         return await _context.ChatRooms
             .Where(r => r.Users.Any(u => u.Id == userId))
             .ToListAsync(cancellationToken);

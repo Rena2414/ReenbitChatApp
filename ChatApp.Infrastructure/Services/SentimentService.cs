@@ -21,7 +21,6 @@ public class SentimentService : ISentimentService
     {
         try
         {
-            // Call Azure Cognitive Services
             DocumentSentiment documentSentiment = await _client.AnalyzeSentimentAsync(text, cancellationToken: cancellationToken);
 
             return documentSentiment.Sentiment switch
@@ -29,13 +28,12 @@ public class SentimentService : ISentimentService
                 TextSentiment.Positive => SentimentType.Positive,
                 TextSentiment.Negative => SentimentType.Negative,
                 TextSentiment.Neutral => SentimentType.Neutral,
-                TextSentiment.Mixed => SentimentType.Neutral, // Grouping mixed as neutral for simplicity
+                TextSentiment.Mixed => SentimentType.Neutral,
                 _ => SentimentType.Neutral
             };
         }
         catch (RequestFailedException ex)
         {
-            // Log exceptions at the Infrastructure level
             _logger.LogError(ex, "Azure Cognitive Services failed to analyze sentiment for text. Defaulting to Neutral.");
             return SentimentType.Neutral;
         }

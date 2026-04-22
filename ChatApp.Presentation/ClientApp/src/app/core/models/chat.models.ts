@@ -7,10 +7,10 @@ export interface ChatRoom {
   id: string;
   name: string;
   createdAt: string;
-  participants: User[]; // Added for the participant list
+  participants: User[];
 }
 
-export interface MessageDto { // Restored name
+export interface MessageDto {
   id: string;
   content: string;
   username: string;

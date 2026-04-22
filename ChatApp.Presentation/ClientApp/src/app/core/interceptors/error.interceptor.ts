@@ -6,7 +6,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError(err => {
       console.error('API Error intercepted:', err);
-      // In a real app, you might trigger a Toast/Snackbar notification here
       return throwError(() => err);
     })
   );

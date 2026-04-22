@@ -25,16 +25,19 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, ChatR
 
     public async Task<ChatRoomDto> Handle(CreateRoomCommand request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ValidationException("Room name is required.");
+
         // 1. Initialize the room
         var room = new ChatRoom 
         { 
             Id = Guid.NewGuid(), 
-            Name = request.Name,
+            Name = request.Name.Trim(),
             CreatedAt = DateTime.UtcNow,
             Users = new List<User>()
         };
 
-        // 2. Combine Creator + Selected Participants (ensuring uniqueness)
+        // 2. Combine Creator + Selected Participants
         var allUserIds = request.ParticipantIds.Append(request.CreatorId).Distinct();
 
         foreach (var userId in allUserIds)
@@ -52,7 +55,7 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, ChatR
         var participantDtos = room.Users.Select(u => new UserDto(u.Id, u.Username)).ToList();
         var roomDto = new ChatRoomDto(room.Id, room.Name, room.CreatedAt, participantDtos);
 
-        // 5. Broadcast to all involved users (SignalR)
+        // 5. Broadcast to all involved users
         await _signalRNotifier.BroadcastRoomCreatedAsync(roomDto);
         
         return roomDto;

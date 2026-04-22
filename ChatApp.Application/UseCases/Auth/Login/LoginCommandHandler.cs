@@ -21,13 +21,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
 
     public async Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken) 
+        var username = request.Username.Trim();
+
+        var user = await _userRepository.GetByUsernameAsync(username, cancellationToken)
                    ?? throw new UnauthorizedException("Invalid username or password.");
 
         if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
-        {
             throw new UnauthorizedException("Invalid username or password.");
-        }
 
         var token = _jwtProvider.Generate(user);
         return new AuthResponseDto(user.Id, user.Username, token);

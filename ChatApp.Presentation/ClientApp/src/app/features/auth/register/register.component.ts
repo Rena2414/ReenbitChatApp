@@ -5,11 +5,11 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
-  selector: 'app-register', // Fixed selector
+  selector: 'app-register',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css'] // Fixed stylesheet reference
+  styleUrls: ['./register.component.css']
 })
 export class RegisterComponent {
   username = '';
@@ -17,23 +17,49 @@ export class RegisterComponent {
   errorMessage = '';
   isLoading = false;
 
+  usernameError = '';
+  passwordError = '';
+
   constructor(private authService: AuthService, private router: Router) {
     if (this.authService.currentUserValue) {
       this.router.navigate(['/']);
     }
   }
 
-  onSubmit() {
-    if (!this.username || !this.password) return;
-    this.isLoading = true;
-    this.errorMessage = '';
+  private validate(): boolean {
+    this.usernameError = '';
+    this.passwordError = '';
 
-    this.authService.register({ username: this.username, password: this.password })
+    const username = this.username.trim();
+    const password = this.password;
+
+    if (username.length < 3 || username.length > 50) {
+      this.usernameError = 'Username must be 3–50 characters.';
+    }
+
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      this.passwordError = 'Password must be 8+ chars with upper, lower, and number.';
+    }
+
+    return !this.usernameError && !this.passwordError;
+  }
+
+  onSubmit() {
+    this.errorMessage = '';
+    if (!this.validate()) return;
+
+    this.isLoading = true;
+
+    this.authService.register({ username: this.username.trim(), password: this.password })
       .subscribe({
         next: () => this.router.navigate(['/']),
         error: (err) => {
-          // Adjusted error message for registration
-          this.errorMessage = err.error?.message || 'Registration failed. Username may already be taken.';
+          this.errorMessage = err.error?.detail || err.error?.message || 'Registration failed.';
           this.isLoading = false;
         }
       });

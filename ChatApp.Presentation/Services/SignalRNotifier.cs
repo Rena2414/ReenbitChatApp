@@ -21,7 +21,6 @@ public class SignalRNotifier : ISignalRNotifier
 
     public async Task BroadcastRoomCreatedAsync(ChatRoomDto room)
     {
-        // Broadcasts the new room to absolutely everyone connected globally
         await _hubContext.Clients.All.SendAsync("RoomCreated", room);
     }
 }

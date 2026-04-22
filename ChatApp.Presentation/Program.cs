@@ -7,6 +7,7 @@ using ChatApp.Infrastructure.Data;
 using ChatApp.Infrastructure.Repositories;
 using ChatApp.Infrastructure.Services;
 using ChatApp.Presentation.Hubs;
+using ChatApp.Presentation.Middleware;
 using ChatApp.Presentation.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,6 @@ builder.Host.UseSerilog((context, configuration) =>
 
 builder.Services.AddControllers();
 
-// Configure JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -35,7 +35,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
         };
 
-        // Important: Required for authenticating SignalR WebSocket connections
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -43,7 +42,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
 
-                // If the request is for our hub and has a token, attach it
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
                 {
                     context.Token = accessToken;
@@ -68,7 +66,6 @@ builder.Services.AddSingleton(x =>
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ChatApp.Application.UseCases.Messages.SendMessage.SendMessageCommand).Assembly));
 
-// Register new Repositories and Auth Services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
@@ -80,17 +77,11 @@ builder.Services.AddTransient<ISignalRNotifier, SignalRNotifier>();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
-// Add Auth middleware (Must be between Routing and Endpoints)
 app.UseAuthentication();
 app.UseAuthorization();
 
