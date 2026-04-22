@@ -3,4 +3,7 @@ using MediatR;
 
 namespace ChatApp.Application.UseCases.ChatRooms.CreateRoom;
 
-public record CreateRoomCommand(string Name, Guid UserId) : IRequest<ChatRoomDto>;
+public record CreateRoomCommand(
+    string Name, 
+    Guid CreatorId, 
+    List<Guid> ParticipantIds) : IRequest<ChatRoomDto>;

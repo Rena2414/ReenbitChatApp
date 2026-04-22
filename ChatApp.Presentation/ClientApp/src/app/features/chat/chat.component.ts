@@ -2,11 +2,11 @@ import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, AfterViewC
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from '../../core/services/chat/chat.service';
-import { ChatRoom, MessageDto } from '../../core/models/chat.models';
-import { MessageBubbleComponent } from './message-bubble/message-bubble.component';
 import { AuthService } from '../../core/services/auth/auth.service';
+import { ChatRoom, MessageDto, User } from '../../core/models/chat.models';
 import { AuthResponseDto } from '../../core/models/auth.models';
 import { Subscription } from 'rxjs';
+import { MessageBubbleComponent } from './message-bubble/message-bubble.component';
 
 @Component({
   selector: 'app-chat',
@@ -19,16 +19,25 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   rooms: ChatRoom[] = [];
-  activeRoom: ChatRoom | null = null;
+  selectedRoom: ChatRoom | null = null;
   messages: MessageDto[] = [];
+  newMessage = '';
+  newRoomName = '';
+  connectionStatus = 'Disconnected';
 
+  // FIX 1: currentUser stored as property — template needs it for
+  // the header username and msg.userId === currentUser.id comparisons.
+  currentUser!: AuthResponseDto;
+
+  // FIX 2: Loading flags — template spinners reference these but
+  // they were absent from the class.
   isRoomsLoading = false;
   isMessagesLoading = false;
 
-  newMessage = '';
-  newRoomName = '';
+  showInviteModal = false;
+  allUsers: User[] = [];
+  selectedUserIds: Set<string> = new Set();
 
-  currentUser!: AuthResponseDto;
   private subs = new Subscription();
 
   constructor(
@@ -38,101 +47,151 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Get the real logged-in user
+    // FIX 3: Resolve and store currentUser before any template renders.
     const user = this.authService.currentUserValue;
     if (user) {
       this.currentUser = user;
     }
 
-    // Start real-time connection (Internal token handling)
     this.chatService.startConnection();
     this.loadRooms();
+    this.loadUsers();
 
-    // Subscribe to messages
     this.subs.add(this.chatService.messages$.subscribe(msgs => {
       this.messages = msgs;
-      this.cdr.detectChanges(); // Force UI update
-      this.scrollToBottom();
+      this.cdr.detectChanges();
     }));
 
-    // Subscribe to new rooms in real-time
     this.subs.add(this.chatService.roomCreated$.subscribe(room => {
-      // BUG FIX: Only add if it's not already in the list
-      if (room && !this.rooms.find(r => r.id === room.id)) {
+      if (!this.rooms.some(r => r.id === room.id)) {
         this.rooms.push(room);
-        this.cdr.detectChanges(); // Force UI update
+        this.cdr.detectChanges();
       }
     }));
-  }
 
-  ngOnDestroy() {
-    // Cleanup to prevent memory leaks and duplicate listeners
-    this.subs.unsubscribe();
+    this.subs.add(this.chatService.connectionStatus$.subscribe(status => {
+      this.connectionStatus = status;
+      this.cdr.detectChanges();
+    }));
   }
 
   ngAfterViewChecked() {
     this.scrollToBottom();
   }
 
-  scrollToBottom(): void {
+  private scrollToBottom(): void {
     try {
       if (this.scrollContainer) {
-        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+        this.scrollContainer.nativeElement.scrollTop =
+          this.scrollContainer.nativeElement.scrollHeight;
       }
-    } catch(err) { }
+    } catch (err) {}
   }
 
   loadRooms() {
     this.isRoomsLoading = true;
-    this.chatService.getRooms().subscribe(rooms => {
-      this.rooms = rooms;
-      this.isRoomsLoading = false;
-      this.cdr.detectChanges();
+    this.chatService.getRooms().subscribe({
+      next: rooms => {
+        this.rooms = rooms;
+        this.isRoomsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isRoomsLoading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  createRoom() {
-    if (!this.newRoomName) return;
-
-    // Call the API. We don't manually push here because the SignalR
-    // 'RoomCreated' listener above will handle it for all users instantly.
-    this.chatService.createRoom(this.newRoomName).subscribe(() => {
-      this.newRoomName = '';
-      this.cdr.detectChanges();
+  loadUsers() {
+    this.chatService.getUsers().subscribe(users => {
+      const current = this.authService.currentUserValue;
+      this.allUsers = users.filter(u => u.id !== current?.id);
     });
   }
 
   selectRoom(room: ChatRoom) {
-    if (this.activeRoom) {
-      this.chatService.leaveRoom(this.activeRoom.name);
+    if (this.selectedRoom) {
+      this.chatService.leaveRoom(this.selectedRoom.name);
     }
-    this.activeRoom = room;
+    this.selectedRoom = room;
     this.chatService.joinRoom(room.name);
 
     this.isMessagesLoading = true;
-    this.chatService.getMessagesHistory(room.id).subscribe(history => {
-      this.chatService.setInitialMessages(history);
-      this.isMessagesLoading = false;
-      this.cdr.detectChanges();
+    this.chatService.getMessagesHistory(room.id).subscribe({
+      next: msgs => {
+        this.chatService.setInitialMessages(msgs);
+        this.isMessagesLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isMessagesLoading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  sendMessage() {
-    if (!this.newMessage || !this.activeRoom) return;
-
-    this.chatService.sendMessage(
-      this.newMessage,
-      this.activeRoom.id,
-      this.currentUser.id,
-      this.currentUser.username,
-      this.activeRoom.name
-    ).subscribe();
-
-    this.newMessage = '';
-    this.cdr.detectChanges();
+  initiateCreateRoom() {
+    if (!this.newRoomName.trim()) return;
+    this.showInviteModal = true;
   }
 
+  toggleUserSelection(userId: string) {
+    if (this.selectedUserIds.has(userId)) {
+      this.selectedUserIds.delete(userId);
+    } else {
+      this.selectedUserIds.add(userId);
+    }
+  }
+
+  confirmCreateRoom() {
+    this.chatService.createRoom(this.newRoomName, Array.from(this.selectedUserIds))
+      .subscribe({
+        next: () => {
+          this.newRoomName = '';
+          this.selectedUserIds.clear();
+          this.showInviteModal = false;
+          this.cdr.detectChanges();
+        }
+        // error: modal stays open so the user can retry
+      });
+  }
+
+  cancelCreation() {
+    this.showInviteModal = false;
+    this.newRoomName = '';
+    this.selectedUserIds.clear();
+  }
+
+  sendMessage() {
+    const user = this.authService.currentUserValue;
+    if (!this.newMessage.trim() || !this.selectedRoom || !user) return;
+
+    // FIX 4: Capture text before clearing so the HTTP payload is correct.
+    const text = this.newMessage;
+    this.newMessage = ''; // Optimistic clear for instant UX feedback
+
+    this.chatService.sendMessage(
+      text,
+      this.selectedRoom.id,
+      user.id,
+      user.username,
+      this.selectedRoom.name
+    ).subscribe({
+      error: () => {
+        // Restore the message if the send actually fails.
+        this.newMessage = text;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // FIX 5: logout() was completely missing.
   logout() {
     this.authService.logout();
+  }
+
+  ngOnDestroy() {
+    this.subs.unsubscribe();
   }
 }

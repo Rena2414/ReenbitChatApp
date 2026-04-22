@@ -17,6 +17,11 @@ public class GetUserRoomsQueryHandler : IRequestHandler<GetUserRoomsQuery, IEnum
     {
         var rooms = await _chatRoomRepository.GetRoomsForUserAsync(request.UserId, cancellationToken);
         
-        return rooms.Select(r => new ChatRoomDto(r.Id, r.Name, r.CreatedAt));
+        return rooms.Select(r => new ChatRoomDto(
+            r.Id, 
+            r.Name, 
+            r.CreatedAt,
+            r.Users.Select(u => new UserDto(u.Id, u.Username)).ToList()
+        ));
     }
 }

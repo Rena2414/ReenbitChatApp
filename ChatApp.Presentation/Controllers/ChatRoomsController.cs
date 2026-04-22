@@ -25,20 +25,23 @@ public class ChatRoomsController : ControllerBase
         var query = new GetUserRoomsQuery(GetCurrentUserId());
         return Ok(await _mediator.Send(query, cancellationToken));
     }
-
-    [HttpPost]
-    public async Task<IActionResult> CreateRoom([FromBody] string roomName, CancellationToken cancellationToken)
-    {
-        var command = new CreateRoomCommand(roomName, GetCurrentUserId());
-        var room = await _mediator.Send(command, cancellationToken);
-        return Ok(room);
-    }
-
+    
     [HttpPost("{roomId:guid}/users")]
     public async Task<IActionResult> AddUserToRoom(Guid roomId, [FromBody] string usernameToAdd, CancellationToken cancellationToken)
     {
         var command = new AddUserToRoomCommand(roomId, usernameToAdd, GetCurrentUserId());
         await _mediator.Send(command, cancellationToken);
         return NoContent();
+    }
+    
+    // NOTE: Aligns with the runtime validation error expecting "roomName"
+    public record CreateRoomRequest(string RoomName, List<Guid> ParticipantIds);
+
+    [HttpPost]
+    public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request, CancellationToken cancellationToken)
+    {
+        var command = new CreateRoomCommand(request.RoomName, GetCurrentUserId(), request.ParticipantIds);
+        var room = await _mediator.Send(command, cancellationToken);
+        return Ok(room);
     }
 }
