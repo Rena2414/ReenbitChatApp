@@ -1,0 +1,311 @@
+/* ============================================================
+   chat.component.css — Main Chat Interface
+   ============================================================ */
+
+/* ─────────────────────────────────────────
+   Outer frame — the glass card
+───────────────────────────────────────── */
+:host {
+  display: block;
+  height: 100vh;
+  padding: 1.5rem;
+}
+
+.container-fluid {
+  height: calc(100vh - 3rem);
+  padding: 0;
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.row {
+  height: 100%;
+  background: var(--surface-panel);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border-light);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(255,255,255,0.6) inset,
+    var(--shadow-glow);
+  overflow: hidden;
+  animation: card-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ─────────────────────────────────────────
+   Sidebar — Room List
+───────────────────────────────────────── */
+.col-md-3.border-end {
+  background: var(--surface-sidebar);
+  border-right: 1px solid var(--border-light) !important;
+  padding: 2rem 1.4rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* "Chat Rooms" heading */
+.col-md-3 h4 {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 1.4rem;
+  padding-bottom: 0.85rem;
+  position: relative;
+}
+
+/* Decorative underline — gradient bar */
+.col-md-3 h4::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--blue-500) 0%, var(--violet-400) 55%, transparent 100%);
+  border-radius: var(--r-pill);
+}
+
+/* Create room input group */
+.col-md-3 .input-group {
+  margin-bottom: 1.2rem;
+}
+
+/* Room list */
+.list-group {
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+}
+
+.list-group-item {
+  background: transparent;
+  border: none !important;
+  border-radius: var(--r-sm) !important;
+  padding: 0.62rem 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  user-select: none;
+  /* Small dot prefix */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Hash icon before each room name */
+.list-group-item::before {
+  content: '#';
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--violet-300);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.18s ease;
+}
+
+.list-group-item:hover {
+  background: rgba(99, 102, 241, 0.07);
+  color: var(--blue-600);
+  transform: translateX(4px);
+}
+.list-group-item:hover::before {
+  color: var(--blue-400);
+}
+
+.list-group-item.active {
+  background: linear-gradient(135deg, var(--blue-500), var(--violet-500));
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 3px 16px rgba(99, 102, 241, 0.38);
+  transform: translateX(4px);
+}
+.list-group-item.active::before {
+  color: rgba(255,255,255,0.75);
+}
+
+/* ─────────────────────────────────────────
+   Main Chat Column
+───────────────────────────────────────── */
+.col-md-9.d-flex {
+  padding: 0;
+  background: transparent;
+  position: relative;
+}
+
+/* ─────────────────────────────────────────
+   Message Feed
+───────────────────────────────────────── */
+.flex-grow-1.overflow-auto {
+  padding: 2rem 2.25rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  scroll-behavior: smooth;
+}
+
+/* Individual message entry */
+.mb-3 {
+  margin-bottom: 0 !important;
+  padding-bottom: 1.1rem;
+  opacity: 0;
+  animation: msg-appear 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes msg-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger each message slightly */
+.mb-3:nth-child(1)  { animation-delay: 0.04s; }
+.mb-3:nth-child(2)  { animation-delay: 0.08s; }
+.mb-3:nth-child(3)  { animation-delay: 0.12s; }
+.mb-3:nth-child(4)  { animation-delay: 0.16s; }
+.mb-3:nth-child(5)  { animation-delay: 0.20s; }
+.mb-3:nth-child(n+6){ animation-delay: 0.24s; }
+
+/* Username */
+.mb-3 strong {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--blue-600);
+  letter-spacing: 0.025em;
+}
+
+/* Timestamp */
+.mb-3 .text-muted.small {
+  font-size: 0.74rem !important;
+  color: var(--text-muted) !important;
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* Message bubble */
+.mb-3 .p-2.mt-1.rounded.border.bg-light {
+  background: var(--surface-bubble) !important;
+  border: 1px solid var(--border-light) !important;
+  border-left: 3px solid var(--violet-300) !important;
+  border-radius: var(--r-md) !important;
+  padding: 0.8rem 1.1rem !important;
+  margin-top: 0.3rem !important;
+  color: var(--text-primary);
+  font-size: 0.915rem;
+  line-height: 1.65;
+  font-weight: 400;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
+}
+
+.mb-3:hover .p-2.mt-1.rounded.border.bg-light {
+  box-shadow: var(--shadow-md);
+  border-left-color: var(--violet-400) !important;
+}
+
+/* ─────────────────────────────────────────
+   Loading Indicator — inside message feed
+   Add this HTML when loading:
+   <div class="loading-dots">
+     <span></span><span></span><span></span>
+   </div>
+───────────────────────────────────────── */
+.messages-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 2rem 2.25rem;
+}
+
+/* ─────────────────────────────────────────
+   Input Bar
+───────────────────────────────────────── */
+.mt-auto.p-3.border-top {
+  padding: 1.2rem 2.25rem !important;
+  border-top: 1px solid var(--border-light) !important;
+  background: linear-gradient(to top, rgba(240,243,255,0.5), transparent);
+}
+
+.mt-auto .input-group .form-control {
+  border-right: none;
+}
+
+/* Send button subtle shimmer on idle */
+.mt-auto .btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.mt-auto .btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0s;
+}
+.mt-auto .btn-primary:hover::after {
+  transform: translateX(100%);
+  transition: transform 0.55s ease;
+}
+
+/* ─────────────────────────────────────────
+   Empty State (no room selected)
+───────────────────────────────────────── */
+[ng-template] { display: none; }
+
+.col-md-9 > .d-flex.align-items-center.justify-content-center {
+  background: transparent;
+}
+
+.col-md-9 .text-muted h4,
+.col-md-9 h4.text-muted {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Decorative asterisk above empty state */
+.col-md-9 .d-flex.align-items-center.justify-content-center::before {
+  content: '✦';
+  position: absolute;
+  font-size: 2.5rem;
+  transform: translateY(-3.5rem);
+  background: linear-gradient(135deg, var(--blue-300), var(--violet-300));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: star-pulse 3s ease-in-out infinite;
+}
+
+@keyframes star-pulse {
+  0%, 100% { transform: translateY(-3.5rem) scale(1)   rotate(0deg);   opacity: 0.7; }
+  50%       { transform: translateY(-3.5rem) scale(1.15) rotate(15deg);  opacity: 1;   }
+}

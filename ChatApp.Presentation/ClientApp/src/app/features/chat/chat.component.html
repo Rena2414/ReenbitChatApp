@@ -1,0 +1,59 @@
+<div class="container-fluid h-100 mt-4">
+  <div class="row h-100">
+    <div class="col-md-3 border-end">
+      <h4>Chat Rooms</h4>
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="New room name" [(ngModel)]="newRoomName">
+        <button class="btn btn-primary" (click)="createRoom()">Create</button>
+      </div>
+
+      <div class="loading-dots text-center my-3" *ngIf="isRoomsLoading">
+        <span>Loading rooms...</span>
+      </div>
+
+      <ul class="list-group" *ngIf="!isRoomsLoading">
+        <li class="list-group-item list-group-item-action cursor-pointer"
+            *ngFor="let room of rooms"
+            [class.active]="activeRoom?.id === room.id"
+            (click)="selectRoom(room)">
+          {{ room.name }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-md-9 d-flex flex-column h-100" *ngIf="activeRoom; else noRoom">
+      <div class="flex-grow-1 overflow-auto p-3" style="max-height: 70vh;">
+
+        <div class="loading-dots text-center my-3" *ngIf="isMessagesLoading">
+          <span>Loading messages...</span>
+        </div>
+
+        <div *ngIf="!isMessagesLoading">
+          <div *ngFor="let msg of messages" class="mb-3">
+            <strong>{{ msg.username }}</strong>
+            <span class="text-muted small ms-2">{{ msg.timestamp | date:'shortTime' }}</span>
+            <app-sentiment-badge class="ms-2" [sentiment]="msg.sentiment"></app-sentiment-badge>
+            <div class="p-2 mt-1 rounded border bg-light">
+              {{ msg.content }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-auto p-3 border-top">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Type a message..."
+                 [(ngModel)]="newMessage" (keyup.enter)="sendMessage()">
+          <button class="btn btn-primary" (click)="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noRoom>
+      <div class="col-md-9 d-flex align-items-center justify-content-center text-muted h-100">
+        <h4>Select a chat room to start messaging</h4>
+      </div>
+    </ng-template>
+  </div>
+</div>

@@ -1,0 +1,17 @@
+# .NET Core
+bin/
+obj/
+appsettings.Development.json
+.vs/
+.idea/
+*.user
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+ChatApp.Presentation/ClientApp/node_modules/
+ChatApp.Presentation/ClientApp/dist/
+
+# Mac OS
+.DS_Store
